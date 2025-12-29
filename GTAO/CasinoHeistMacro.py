@@ -8,6 +8,7 @@ from PIL import ImageGrab
 import keyboard
 import winsound
 import sys
+import subprocess
 
 # -- memo -- #
 #
@@ -18,6 +19,8 @@ import sys
 # 다양한 해상도에도 적용하기 위해 이미지의 크기 resize,
 # 동적 해상도에 따른 비율계산 로직 추가
 # F6키를 눌렀을때 프로그램을 재시작 하는 기능 추가. (큰 의미 없어보임)
+# 알 수 없는 이유로 F6 눌렀을때 png파일을 찾는 로직이 꼬임.
+# 아마도 exe에서 호출할때 MEIPASS나 os.execl이 오류내는 것 같음
 
 
 def resource_path(relative_path):
@@ -93,9 +96,18 @@ def exit_program():
 def restart_program():
     """프로그램 재시작"""
     winsound.Beep(800, 100)
-    # 현재 실행 경로를 찾아 새 프로세스로 교체
-    python = sys.executable
-    os.execl(python, python, *sys.argv)
+    winsound.Beep(1200, 100)
+    print("Restarting program...")
+
+    # 현재 실행 중인 파일의 경로 (EXE 또는 .py)
+    executable = sys.executable
+    args = sys.argv
+
+    # 새로운 프로세스를 독립적으로 실행
+    subprocess.Popen([executable] + args, shell=True)
+    
+    # 현재 프로세스는 즉시 종료 (임시 폴더 꼬임 방지)
+    os._exit(0)
 
 def run_hack():
     selected_key = None
@@ -122,7 +134,7 @@ def run_hack():
         for x in X_COORDS:
             # 파츠별 bbox 설정
             region = (x, y, x + PART_SIZE_PX, y + PART_SIZE_PX)
-            if get_precision_score(trap_img, region) >= 0.90:
+            if get_precision_score(trap_img, region) >= 0.80:
                 score = -2.0
             else:
                 score = max([get_precision_score(p, region) for p in answer_parts])
